@@ -1,4 +1,4 @@
-    # Budget Bazar v2.0 — Project Analysis Report
+# Budget Bazar v2.0 — Project Analysis Report
 
 ## Executive Summary
 The Budget Bazar e-commerce project is **substantially complete** with all major features implemented. The application is functional with mock data and real integrations configured. However, there are specific areas requiring attention for production readiness.
@@ -54,12 +54,13 @@ The Budget Bazar e-commerce project is **substantially complete** with all major
 ## 3. State Management & Context ✅ COMPLETE
 
 ### Store (`src/lib/store.tsx`)
-- ✅ Cart management (add, remove, update quantity, clear)
-- ✅ Wishlist toggle functionality
-- ✅ Budget tracking with localStorage persistence
-- ✅ Compare list for products
+- ✅ Cart management (add, remove, update quantity, clear) — now cloud-synced with Supabase for logged-in users
+- ✅ Wishlist toggle functionality — now cloud-synced with Supabase for logged-in users
+- ✅ Compare list for products — now cloud-synced with Supabase for logged-in users
+- ✅ User state/profile — now cloud-synced with Supabase for logged-in users
+- ✅ Budget tracking with localStorage persistence (cloud sync optional)
 - ✅ Supabase auth listener integration (with null safety check)
-- ✅ localStorage fallback when Supabase unavailable
+- ✅ localStorage fallback for guests or when Supabase unavailable
 
 ### Auth Context (`src/context/AuthContext.tsx`)
 - ✅ Firebase authentication with:
@@ -370,6 +371,21 @@ const securityHeaders = [
 | Order persistence | ❌ | Mock data only |
 
 **Overall Production Score: 85/100**
+
+---
+
+## 13. Deployment & Production Checklist
+
+- [x] Vercel config (`vercel.json`) present
+- [x] Security headers in `next.config.ts`
+- [x] `.env.local.example` updated for all keys
+- [x] README updated with deploy and Supabase setup
+- [ ] All mock data removed, Supabase CRUD everywhere
+- [ ] Orders, users, auctions: real DB integration
+- [ ] User profile and dashboard: Supabase sync
+- [ ] Real-time features: Supabase subscriptions
+- [ ] Error handling and validation everywhere
+- [ ] Basic tests (if possible)
 
 ---
 

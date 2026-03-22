@@ -31,34 +31,44 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<StoreState>(INITIAL);
 
   useEffect(() => {
+    const loadCart = async (userId: string) => {
+      if (!supabase) return;
+      const { data, error } = await supabase
+        .from('users')
+        .select('cart')
+        .eq('id', userId)
+        .single();
+      if (!error && data?.cart) {
+        setState(prev => ({ ...prev, cart: data.cart }));
+      }
+    };
+
     const saved = localStorage.getItem('bb_store_v2');
     if (saved) try { setState(JSON.parse(saved)); } catch {}
 
-    // Supabase Auth Listener (Foundation) - Only run if supabase is enabled
     if (supabase) {
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event: any, session: any) => {
         if (session?.user) {
-          // Map Supabase user to our User type
-          const u: User = {
-            id: session.user.id,
-            name: session.user.user_metadata.full_name || session.user.email?.split('@')[0] || 'User',
-            email: session.user.email || '',
-            role: 'buyer',
-            balance: 50000,
-            points: 0,
-            onboarded: true
-          };
-          setUser(u);
+          // Fetch user data and cart from Supabase
+          const { data: userData } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+          if (userData) {
+            setUser(userData);
+            setState(prev => ({ ...prev, user: userData }));
+            await loadCart(session.user.id);
+          }
         } else {
           setUser(null);
         }
       });
-
       return () => subscription.unsubscribe();
     }
   }, []);
 
-  const addToCart = (item: CartItem) => {
+  const addToCart = async (item: CartItem) => {
     setState(prev => {
       const existing = prev.cart.find(c => c.id === item.id);
       const cart = existing
@@ -68,34 +78,47 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('bb_store_v2', JSON.stringify(newState));
       return newState;
     });
+    // Sync to Supabase if logged in
+    if (supabase && state.user) {
+      await supabase.from('users').update({ cart: [...state.cart, { ...item, qty: 1 }] }).eq('id', state.user.id);
+    }
   };
 
-  const removeFromCart = (id: string) => {
+  const removeFromCart = async (id: string) => {
     setState(prev => {
       const newState = { ...prev, cart: prev.cart.filter(c => c.id !== id) };
       localStorage.setItem('bb_store_v2', JSON.stringify(newState));
       return newState;
     });
+    if (supabase && state.user) {
+      await supabase.from('users').update({ cart: state.cart.filter(c => c.id !== id) }).eq('id', state.user.id);
+    }
   };
 
-  const updateQty = (id: string, qty: number) => {
+  const updateQty = async (id: string, qty: number) => {
     if (qty <= 0) return removeFromCart(id);
     setState(prev => {
       const newState = { ...prev, cart: prev.cart.map(c => c.id === id ? { ...c, qty } : c) };
       localStorage.setItem('bb_store_v2', JSON.stringify(newState));
       return newState;
     });
+    if (supabase && state.user) {
+      await supabase.from('users').update({ cart: state.cart.map(c => c.id === id ? { ...c, qty } : c) }).eq('id', state.user.id);
+    }
   };
 
-  const clearCart = () => {
+  const clearCart = async () => {
     setState(prev => {
       const newState = { ...prev, cart: [] };
       localStorage.setItem('bb_store_v2', JSON.stringify(newState));
       return newState;
     });
+    if (supabase && state.user) {
+      await supabase.from('users').update({ cart: [] }).eq('id', state.user.id);
+    }
   };
 
-  const toggleWishlist = (id: string) => {
+  const toggleWishlist = async (id: string) => {
     setState(prev => {
       const wishlist = prev.wishlist.includes(id) 
         ? prev.wishlist.filter(w => w !== id) 
@@ -104,9 +127,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('bb_store_v2', JSON.stringify(newState));
       return newState;
     });
+    if (supabase && state.user) {
+      // Upsert wishlist in Supabase (wishlist is a separate table)
+      if (state.wishlist.includes(id)) {
+        // Remove from wishlist
+        await supabase.from('wishlist').delete().match({ user_id: state.user.id, product_id: id });
+      } else {
+        // Add to wishlist
+        await supabase.from('wishlist').insert({ user_id: state.user.id, product_id: id });
+      }
+    }
   };
 
-  const toggleCompare = (id: string) => {
+  const toggleCompare = async (id: string) => {
     setState(prev => {
       let compareList = prev.compareList;
       if (prev.compareList.includes(id)) {
@@ -118,14 +151,33 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('bb_store_v2', JSON.stringify(newState));
       return newState;
     });
+    if (supabase && state.user) {
+      // Store compareList as a user column (array) in Supabase
+      await supabase.from('users').update({ compare_list: state.compareList.includes(id)
+        ? state.compareList.filter(c => c !== id)
+        : [...state.compareList, id] }).eq('id', state.user.id);
+    }
   };
 
-  const setUser = (user: User | null) => {
+  const setUser = async (user: User | null) => {
     setState(prev => {
       const newState = { ...prev, user };
       localStorage.setItem('bb_store_v2', JSON.stringify(newState));
       return newState;
     });
+    if (supabase && user) {
+      // Upsert user info in Supabase
+      await supabase.from('users').upsert({
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        avatar_url: user.avatar,
+        role: user.role,
+        balance: user.balance,
+        points: user.points,
+        onboarded: user.onboarded
+      });
+    }
   };
 
   const setBudget = (budget: number) => {

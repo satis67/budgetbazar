@@ -1,7 +1,8 @@
 'use client';
 import { useState, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { PRODUCTS, CATEGORIES } from '../../lib/data';
+import { CATEGORIES } from '../../lib/data';
+import { supabase } from '../../lib/supabase';
 import ProductCard from '../../components/ProductCard';
 
 const SORT_OPTIONS = ['Relevance', 'Price: Low to High', 'Price: High to Low', 'Best Rating', 'Most Reviews'];
@@ -20,30 +21,45 @@ function MarketplaceContent() {
   const [sort, setSort] = useState('Relevance');
   const [priceRange, setPriceRange] = useState<any>(null);
   const [rating, setRating] = useState(0);
+  const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const filtered = useMemo(() => {
-    let list = PRODUCTS.filter(p => {
-      const matchSearch = p.name.toLowerCase().includes(search.toLowerCase()) || 
-                          (p.tags && p.tags.some(t => t.toLowerCase().includes(search.toLowerCase()))); // Reverted to original search logic for tags
-      const matchCat = category === 'All' || p.category === category;
-      
-      let matchPrice = true;
-      if (priceRange) {
-        if (priceRange.min && p.price < priceRange.min) matchPrice = false;
-        if (priceRange.max && p.price > priceRange.max) matchPrice = false;
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setLoading(true);
+      let query = supabase.from('products').select('*');
+      if (search) {
+        query = query.ilike('name', `%${search}%`);
       }
-
-      const matchRating = p.rating >= rating;
-
-      return matchSearch && matchCat && matchPrice && matchRating;
-    });
-
-    if (sort === 'Price: Low to High') list.sort((a, b) => a.price - b.price);
-    else if (sort === 'Price: High to Low') list.sort((a, b) => b.price - a.price);
-    else if (sort === 'Best Rating') list.sort((a, b) => b.rating - a.rating);
-    else if (sort === 'Most Reviews') list.sort((a, b) => b.reviews - a.reviews);
-
-    return list;
+      if (category && category !== 'All') {
+        query = query.eq('category', category);
+      }
+      // Add more filters as needed
+      const { data, error } = await query;
+      if (!error && data) {
+        let list = data;
+        if (priceRange) {
+          list = list.filter((p: any) => {
+            let match = true;
+            if (priceRange.min && p.price < priceRange.min) match = false;
+            if (priceRange.max && p.price > priceRange.max) match = false;
+            return match;
+          });
+        }
+        if (rating) {
+          list = list.filter((p: any) => p.rating >= rating);
+        }
+        if (sort === 'Price: Low to High') list.sort((a, b) => a.price - b.price);
+        else if (sort === 'Price: High to Low') list.sort((a, b) => b.price - a.price);
+        else if (sort === 'Best Rating') list.sort((a, b) => b.rating - a.rating);
+        else if (sort === 'Most Reviews') list.sort((a, b) => b.reviews - a.reviews);
+        setProducts(list);
+      } else {
+        setProducts([]);
+      }
+      setLoading(false);
+    };
+    fetchProducts();
   }, [search, category, sort, priceRange, rating]);
 
   return (
@@ -54,7 +70,7 @@ function MarketplaceContent() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
           <div>
             <h1 className="text-4xl font-black tracking-tight mb-2">Marketplace</h1>
-            <p className="text-gray-400 text-sm font-medium">{filtered.length} Premium Products Found</p>
+            <p className="text-gray-400 text-sm font-medium">{products.length} Premium Products Found</p>
           </div>
           
           <div className="flex flex-col sm:flex-row gap-4">
@@ -140,7 +156,12 @@ function MarketplaceContent() {
 
           {/* Product Grid */}
           <main className="flex-1">
-            {filtered.length === 0 ? (
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-20 text-center">
+                <div className="w-20 h-20 bg-white/5 rounded-3xl flex items-center justify-center text-4xl mb-6">⏳</div>
+                <h3 className="text-2xl font-bold text-white mb-2">Loading Products...</h3>
+              </div>
+            ) : products.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-center">
                 <div className="w-20 h-20 bg-white/5 rounded-3xl flex items-center justify-center text-4xl mb-6">🔍</div>
                 <h3 className="text-2xl font-bold text-white mb-2">No Products Found</h3>
@@ -154,7 +175,7 @@ function MarketplaceContent() {
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-                {filtered.map(p => <ProductCard key={p.id} product={p} />)}
+                {products.map(p => <ProductCard key={p.id} product={p} />)}
               </div>
             )}
           </main>

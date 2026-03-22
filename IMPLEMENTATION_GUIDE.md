@@ -372,32 +372,20 @@ export async function POST(request: Request) {
 
 ## Phase 3: Frontend Integration
 
-### Step 3.1: Update `lib/store.tsx` to use real data
+
+### Step 3.1: Update `lib/store.tsx` to use Supabase cloud sync
+
+> **Note:** As of v2.0, all state (cart, wishlist, compare, user) is cloud-synced with Supabase for logged-in users. Guests use localStorage fallback. This enables seamless experience across devices and real-time updates.
 
 ```typescript
-// Load users from Supabase instead of hardcoded
-useEffect(() => {
-  if (supabase) {
-    // Subscribe to auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (session?.user) {
-        // Fetch user data from database
-        const { data: userData } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
-
-        if (userData) {
-          setUser(userData);
-          setState(prev => ({ ...prev, user: userData }));
-        }
-      }
-    });
-
-    return () => subscription?.unsubscribe();
+// Example: Add to cart (cloud sync)
+const addToCart = async (item: CartItem) => {
+  setState(prev => { /* ...update local state... */ });
+  if (supabase && state.user) {
+    await supabase.from('users').update({ cart: /* new cart array */ }).eq('id', state.user.id);
   }
-}, []);
+};
+// Similar logic for wishlist, compare, and user profile
 ```
 
 ### Step 3.2: Create `hooks/useProducts.ts`
