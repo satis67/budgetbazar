@@ -1,0 +1,27 @@
+### Create a Product (Admin / Needs Bearer Token)
+POST http://localhost:5000/api/products
+Content-Type: application/json
+Authorization: Bearer <YOUR_TOKEN_HERE>
+
+{
+  "name": "Budget Smartphone",
+  "price": 9999,
+  "discountPrice": 8999,
+  "category": "Electronics",
+  "stock": 50,
+  "description": "A very affordable high performance smartphone.",
+  "variants": [
+    { "color": "Black", "stock": 25 },
+    { "color": "Blue", "stock": 25 }
+  ]
+}
+
+### Get all Products (with Pagination & Filters)
+GET http://localhost:5000/api/products?keyword=Smart&category=Electronics&maxPrice=10000
+
+### Get Single Product
+GET http://localhost:5000/api/products/<PRODUCT_ID>
+
+### Soft Delete Product
+DELETE http://localhost:5000/api/products/<PRODUCT_ID>
+Authorization: Bearer <YOUR_TOKEN_HERE>

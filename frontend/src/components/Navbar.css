@@ -1,0 +1,19 @@
+.navbar { background-color: var(--primary-blue); color: var(--white); height: 56px; position: fixed; top: 0; left: 0; width: 100%; z-index: 1000; display: flex; align-items: center; }
+.nav-container { width: 100%; max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; }
+.nav-logo { font-size: 20px; font-style: italic; font-weight: bold; }
+.nav-search { flex: 1; padding: 0 20px; display: flex; }
+.nav-search input { width: 100%; padding: 8px 16px; border: none; outline: none; font-size: 14px; border-radius: 2px 0 0 2px; }
+.nav-search button { background-color: #fff; color: var(--primary-blue); padding: 8px 16px; border-radius: 0 2px 2px 0; }
+.nav-links { display: flex; align-items: center; gap: 20px; }
+.login-btn { background-color: var(--white); color: var(--primary-blue); padding: 5px 40px; font-weight: 500; border-radius: 2px; border: 1px solid #dbdbdb; }
+.nav-profile { display: flex; align-items: center; margin-right: 15px;}
+.nav-username { font-weight: 500; margin-right: 10px; }
+.nav-cart { display: flex; align-items: center; font-weight: 500; }
+.cart-badge { background-color: var(--secondary-yellow); color: var(--text-dark); border-radius: 50%; padding: 2px 6px; font-size: 12px; margin-left: 5px; }
+.logout-btn { background: transparent; color: white; font-weight: 500; }
+.notif-wrapper { position: relative; margin: 0 15px;}
+.notif-btn { background: transparent; font-size: 18px; position: relative;}
+.notif-badge { background: var(--red); color: white; border-radius: 50%; padding: 2px 5px; font-size: 10px; position: absolute; top: -5px; right: -5px;}
+.notif-dropdown { position: absolute; top: 35px; right: -20px; background: white; color: var(--text-dark); width: 250px; box-shadow: 0 2px 4px rgba(0,0,0,.2); padding: 0; border-radius: 2px; max-height: 300px; overflow-y: auto;}
+.notif-item { font-size: 13px; padding: 10px; border-bottom: 1px solid var(--border-color); }
+@media (max-width: 768px) { .nav-search { display: none; } .login-btn { padding: 5px 15px; } .nav-username { display: none; } }

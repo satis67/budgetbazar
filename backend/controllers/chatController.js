@@ -1,0 +1,4 @@
+const Message = require('../models/Message');
+const sendMessage = async (req, res) => { try { const { receiverId, content } = req.body; const message = await Message.create({ sender: req.user._id, receiver: receiverId, content, delivered: true }); res.status(201).json(message); } catch(err) { res.status(500).json({ message: err.message }); } };
+const getChatHistory = async (req, res) => { try { const partnerId = req.params.userId; const messages = await Message.find({ $or: [ { sender: req.user._id, receiver: partnerId }, { sender: partnerId, receiver: req.user._id } ] }).sort({ createdAt: 1 }); await Message.updateMany( { sender: partnerId, receiver: req.user._id, seen: false }, { $set: { seen: true } } ); res.json(messages); } catch(err) { res.status(500).json({ message: err.message }); } };
+module.exports = { sendMessage, getChatHistory };

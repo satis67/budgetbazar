@@ -1,0 +1,55 @@
+/* Flipkart Style Global Resets and Variables */
+:root {
+  --primary-blue: #2874f0;
+  --secondary-yellow: #ffe500;
+  --text-dark: #212121;
+  --text-light: #878787;
+  --bg-color: #f1f3f6;
+  --white: #ffffff;
+  --border-color: #e0e0e0;
+  --green: #388e3c;
+  --red: #ff6161;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: Roboto, Arial, sans-serif;
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-dark);
+  font-size: 14px;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  outline: none;
+}
+
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 10px;
+}
+
+/* Mobile first layout */
+.app-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.main-content {
+  flex: 1;
+  padding-top: 56px; /* Offset for fixed navbar */
+}
